@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="aurora" data-mode="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nexus Tic Tac Toe — Modern Glassmorphism Web Game</title>
+  <meta name="description" content="A modern, responsive Tic Tac Toe game with glassmorphic design, themes, AI difficulties, infinite mode, sounds, and animations.">
+  
+  <!-- Google Fonts: Outfit & Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Global SVG Gradients for X and O marks -->
+  <svg width="0" height="0" class="sr-only" aria-hidden="true">
+    <defs>
+      <linearGradient id="x-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="var(--color-x-start, #fb7185)"/>
+        <stop offset="100%" stop-color="var(--color-x, #f43f5e)"/>
+      </linearGradient>
+      <linearGradient id="o-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="var(--color-o-start, #38bdf8)"/>
+        <stop offset="100%" stop-color="var(--color-o, #06b6d4)"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- Ambient Animated Background Gradients & Glow Blobs -->
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="bg-noise"></div>
+  </div>
+
+  <!-- Confetti Canvas Overlay -->
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <!-- Screen Reader Live Announcements -->
+  <div id="sr-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container">
+    
+    <!-- HEADER BAR -->
+    <header class="app-header glass-card">
+      <div class="logo-area" id="header-logo" role="button" tabindex="0" title="Go to Main Menu">
+        <div class="logo-icon">
+          <svg viewBox="0 0 40 40" class="mini-grid-icon">
+            <line x1="14" y1="4" x2="14" y2="36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="26" y1="4" x2="26" y2="36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="4" y1="14" x2="36" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="4" y1="26" x2="36" y2="26" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M7 7 L11 11 M11 7 L7 11" stroke="var(--color-x)" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="20" cy="20" r="3" stroke="var(--color-o)" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>Nexus<span class="logo-accent">XO</span></h1>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Theme Selector Dropdown -->
+        <div class="control-group">
+          <label for="theme-select" class="sr-only">Select Theme</label>
+          <div class="select-wrapper">
+            <select id="theme-select" class="glass-select" aria-label="Theme selection">
+              <option value="aurora">🌌 Aurora</option>
+              <option value="sunset">🌅 Sunset</option>
+              <option value="ocean">🌊 Ocean</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Light/Dark Mode Toggle Button -->
+        <button id="mode-toggle-btn" class="icon-btn glass-btn" aria-label="Toggle light or dark theme" title="Toggle Light/Dark Mode">
+          <span class="btn-icon sun-icon">☀️</span>
+          <span class="btn-icon moon-icon">🌙</span>
+        </button>
+
+        <!-- Sound FX Toggle Button -->
+        <button id="sound-toggle-btn" class="icon-btn glass-btn" aria-label="Toggle sound effects" title="Toggle Sound (M)">
+          <span class="btn-icon sound-on">🔊</span>
+          <span class="btn-icon sound-off">🔇</span>
+        </button>
+
+        <!-- Match History Button -->
+        <button id="history-modal-btn" class="icon-btn glass-btn" aria-label="Open Match History" title="Match History">
+          <span class="btn-icon">📜</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEW 1: START SCREEN / MAIN MENU -->
+    <main id="start-screen" class="view-panel active">
+      <div class="start-card glass-card">
+        <div class="hero-header">
+          <span class="hero-badge">Ultimate Tic Tac Toe</span>
+          <h2 class="hero-title">Choose Your Battle</h2>
+          <p class="hero-subtitle">Modern aesthetics, smart AI, and an intense Infinite twist.</p>
+        </div>
+
+        <form id="game-setup-form" onsubmit="return false;">
+          <!-- 1. Mode Selection Cards -->
+          <div class="section-title">Select Mode</div>
+          <div class="mode-grid" role="radiogroup" aria-label="Game Mode">
+            <label class="mode-card active" data-mode="pvp">
+              <input type="radio" name="gameMode" value="pvp" checked class="sr-only">
+              <div class="mode-card-icon">👥</div>
+              <div class="mode-card-content">
+                <span class="mode-card-title">Two Players</span>
+                <span class="mode-card-desc">Local 1v1 on the same device</span>
+              </div>
+            </label>
+
+            <label class="mode-card" data-mode="ai">
+              <input type="radio" name="gameMode" value="ai" class="sr-only">
+              <div class="mode-card-icon">🤖</div>
+              <div class="mode-card-content">
+                <span class="mode-card-title">Vs Computer</span>
+                <span class="mode-card-desc">Test your skills against AI</span>
+              </div>
+            </label>
+
+            <label class="mode-card" data-mode="infinite">
+              <input type="radio" name="gameMode" value="infinite" class="sr-only">
+              <div class="mode-card-icon">♾️</div>
+              <div class="mode-card-content">
+                <span class="mode-card-title">Infinite Mode</span>
+                <span class="mode-card-desc">Max 3 marks each, oldest fades!</span>
+              </div>
+              <span class="card-tag">Special</span>
+            </label>
+          </div>
+
+          <!-- Infinite Mode Opponent Type (Only shown if Infinite is selected) -->
+          <div id="infinite-opponent-box" class="config-row sub-config hidden">
+            <span class="config-label">Infinite Opponent</span>
+            <div class="segmented-control" role="radiogroup" aria-label="Infinite Opponent">
+              <label class="segment-btn active">
+                <input type="radio" name="infiniteOpponent" value="pvp" checked class="sr-only">
+                <span>Pass & Play</span>
+              </label>
+              <label class="segment-btn">
+                <input type="radio" name="infiniteOpponent" value="ai" class="sr-only">
+                <span>Vs Computer</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- AI Difficulty Selector (Shown if Vs AI or Infinite Vs AI) -->
+          <div id="ai-difficulty-box" class="config-row sub-config hidden">
+            <span class="config-label">AI Difficulty</span>
+            <div class="segmented-control" role="radiogroup" aria-label="AI Difficulty">
+              <label class="segment-btn">
+                <input type="radio" name="aiDifficulty" value="easy" class="sr-only">
+                <span>🌱 Easy</span>
+              </label>
+              <label class="segment-btn active">
+                <input type="radio" name="aiDifficulty" value="medium" checked class="sr-only">
+                <span>⚡ Medium</span>
+              </label>
+              <label class="segment-btn">
+                <input type="radio" name="aiDifficulty" value="hard" class="sr-only">
+                <span>🧠 Unbeatable</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Player Setup (Names & Mark Choice) -->
+          <div class="config-section">
+            <div class="section-title">Player Customization</div>
+            <div class="players-input-grid">
+              
+              <!-- Player 1 Box -->
+              <div class="player-custom-card">
+                <div class="player-custom-header">
+                  <span class="player-badge p1-badge">P1</span>
+                  <div class="mark-preview-icon x-preview">
+                    <svg viewBox="0 0 32 32">
+                      <path d="M8 8 L24 24 M24 8 L8 24" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="input-field">
+                  <label for="p1-name-input">Player 1 Name</label>
+                  <input type="text" id="p1-name-input" value="Player 1" maxlength="15" autocomplete="off">
+                </div>
+              </div>
+
+              <!-- Player 2 / AI Box -->
+              <div class="player-custom-card">
+                <div class="player-custom-header">
+                  <span class="player-badge p2-badge" id="p2-badge-text">P2</span>
+                  <div class="mark-preview-icon o-preview">
+                    <svg viewBox="0 0 32 32">
+                      <circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="4.5" fill="none"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="input-field">
+                  <label for="p2-name-input" id="p2-name-label">Player 2 Name</label>
+                  <input type="text" id="p2-name-input" value="Player 2" maxlength="15" autocomplete="off">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extra Match Options -->
+          <div class="match-options-grid">
+            <!-- Mark Assignment for Human in AI Mode -->
+            <div class="config-row" id="human-mark-row">
+              <span class="config-label">Your Mark</span>
+              <div class="segmented-control" role="radiogroup" aria-label="Select Player Mark">
+                <label class="segment-btn active">
+                  <input type="radio" name="playerMark" value="X" checked class="sr-only">
+                  <span class="symbol-tag x-tag">X (Cross)</span>
+                </label>
+                <label class="segment-btn">
+                  <input type="radio" name="playerMark" value="O" class="sr-only">
+                  <span class="symbol-tag o-tag">O (Nought)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Who Starts First -->
+            <div class="config-row">
+              <span class="config-label">First Move</span>
+              <div class="segmented-control" role="radiogroup" aria-label="Who starts first">
+                <label class="segment-btn active">
+                  <input type="radio" name="firstTurn" value="p1" checked class="sr-only">
+                  <span>Player 1 (X)</span>
+                </label>
+                <label class="segment-btn">
+                  <input type="radio" name="firstTurn" value="p2" class="sr-only">
+                  <span id="first-turn-p2-text">Player 2 (O)</span>
+                </label>
+                <label class="segment-btn">
+                  <input type="radio" name="firstTurn" value="random" class="sr-only">
+                  <span>🎲 Random</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Turn Timer Toggle -->
+            <div class="config-row timer-row">
+              <div class="toggle-info">
+                <span class="config-label">10-Second Turn Timer</span>
+                <span class="config-help">Auto-plays random move on timeout</span>
+              </div>
+              <label class="switch" aria-label="Toggle 10-second turn timer">
+                <input type="checkbox" id="timer-toggle-check">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Start Button -->
+          <button type="button" id="start-game-btn" class="primary-glow-btn">
+            <span class="btn-text">Start Game</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+      </div>
+    </main>
+
+    <!-- VIEW 2: GAME SCREEN -->
+    <main id="game-screen" class="view-panel">
+      <!-- TOP STATUS & CONTROLS BAR -->
+      <div class="game-top-bar glass-card">
+        <button id="back-to-menu-btn" class="glass-btn small-btn" title="Exit to Menu">
+          <span>← Menu</span>
+        </button>
+
+        <div class="game-meta-badge" id="game-meta-badge">
+          <span class="meta-mode" id="active-mode-label">Two Players</span>
+          <span class="meta-sub" id="active-sub-label">Standard</span>
+        </div>
+
+        <button id="quick-restart-btn" class="glass-btn small-btn" title="Restart Round (R)">
+          <span>↻ Restart</span>
+        </button>
+      </div>
+
+      <!-- SCOREBOARD CARD -->
+      <div class="scoreboard-container glass-card">
+        <!-- Player 1 Score Block -->
+        <div class="player-score-card" id="p1-score-card">
+          <div class="score-avatar x-avatar">
+            <svg viewBox="0 0 32 32">
+              <path d="M9 9 L23 23 M23 9 L9 23" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="player-info">
+            <span class="player-title" id="p1-display-name">Player 1</span>
+            <div class="marks-counter" id="p1-marks-indicator" title="Active marks on board" style="display: none;">
+              <span class="mark-dot"></span>
+              <span class="mark-dot"></span>
+              <span class="mark-dot"></span>
+            </div>
+          </div>
+          <div class="score-value" id="p1-score-value">0</div>
+        </div>
+
+        <!-- VS & Ties Block -->
+        <div class="score-center-block">
+          <div class="ties-counter">
+            <span class="ties-label">DRAWS</span>
+            <span class="ties-value" id="ties-score-value">0</span>
+          </div>
+          <div class="turn-timer-display" id="turn-timer-container" style="display: none;">
+            <svg class="timer-ring-svg" viewBox="0 0 40 40">
+              <circle class="timer-ring-bg" cx="20" cy="20" r="16"/>
+              <circle class="timer-ring-bar" id="timer-ring-bar" cx="20" cy="20" r="16"/>
+            </svg>
+            <span class="timer-text" id="timer-text">10</span>
+          </div>
+        </div>
+
+        <!-- Player 2 Score Block -->
+        <div class="player-score-card" id="p2-score-card">
+          <div class="score-value" id="p2-score-value">0</div>
+          <div class="player-info right-aligned">
+            <span class="player-title" id="p2-display-name">Player 2</span>
+            <div class="marks-counter" id="p2-marks-indicator" title="Active marks on board" style="display: none;">
+              <span class="mark-dot"></span>
+              <span class="mark-dot"></span>
+              <span class="mark-dot"></span>
+            </div>
+          </div>
+          <div class="score-avatar o-avatar">
+            <svg viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r="7.5" stroke="currentColor" stroke-width="4.5" fill="none"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- TURN BANNER & EXPIRY NOTIFICATION -->
+      <div class="turn-banner-container">
+        <div class="turn-pill glass-card" id="turn-indicator-pill">
+          <span class="turn-pulse-dot" id="turn-pulse-dot"></span>
+          <span class="turn-text" id="turn-status-text">Player 1's Turn</span>
+        </div>
+        <div class="infinite-warning-pill" id="infinite-warning-pill" style="display: none;">
+          ⚠️ 4th mark will remove your oldest mark!
+        </div>
+      </div>
+
+      <!-- MAIN TIC TAC TOE BOARD -->
+      <div class="board-wrapper">
+        <div class="board-glass-card glass-card" id="board-container">
+          <!-- 3x3 Grid of interactive cells -->
+          <div class="tictactoe-grid" id="grid" role="grid" aria-label="Tic Tac Toe 3 by 3 Grid">
+            <button class="cell" data-index="0" role="gridcell" aria-label="Row 1, Column 1, Empty" tabindex="0"></button>
+            <button class="cell" data-index="1" role="gridcell" aria-label="Row 1, Column 2, Empty" tabindex="0"></button>
+            <button class="cell" data-index="2" role="gridcell" aria-label="Row 1, Column 3, Empty" tabindex="0"></button>
+            
+            <button class="cell" data-index="3" role="gridcell" aria-label="Row 2, Column 1, Empty" tabindex="0"></button>
+            <button class="cell" data-index="4" role="gridcell" aria-label="Row 2, Column 2, Empty" tabindex="0"></button>
+            <button class="cell" data-index="5" role="gridcell" aria-label="Row 2, Column 3, Empty" tabindex="0"></button>
+            
+            <button class="cell" data-index="6" role="gridcell" aria-label="Row 3, Column 1, Empty" tabindex="0"></button>
+            <button class="cell" data-index="7" role="gridcell" aria-label="Row 3, Column 2, Empty" tabindex="0"></button>
+            <button class="cell" data-index="8" role="gridcell" aria-label="Row 3, Column 3, Empty" tabindex="0"></button>
+          </div>
+
+          <!-- Animated Winning Line SVG Overlay -->
+          <svg class="win-strike-overlay" id="win-strike-overlay" viewBox="0 0 300 300" aria-hidden="true">
+            <line id="win-strike-line" x1="0" y1="0" x2="0" y2="0" stroke="var(--win-line-color, #fbbf24)" stroke-width="8" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- BOTTOM CONTROLS & SHORTCUTS -->
+      <div class="game-bottom-bar">
+        <div class="action-buttons-group">
+          <button id="undo-btn" class="glass-btn action-btn" title="Undo last move (U)">
+            <span class="btn-icon">↶</span>
+            <span>Undo</span>
+          </button>
+          <button id="reset-round-btn" class="glass-btn action-btn" title="New Round">
+            <span class="btn-icon">↻</span>
+            <span>New Round</span>
+          </button>
+          <button id="reset-scores-btn" class="glass-btn action-btn" title="Reset match scores">
+            <span class="btn-icon">🗑️</span>
+            <span>Reset Scores</span>
+          </button>
+        </div>
+
+        <div class="keyboard-hints">
+          <span>Keys: <kbd>1-9</kbd> Place Mark &bull; <kbd>U</kbd> Undo &bull; <kbd>R</kbd> Restart &bull; <kbd>M</kbd> Mute</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL 1: GAME OVER / RESULT POPUP -->
+  <div class="modal-backdrop" id="game-over-modal" aria-hidden="true" role="dialog" aria-labelledby="modal-result-title">
+    <div class="modal-card glass-card">
+      <div class="modal-icon-container" id="modal-result-icon">
+        🏆
+      </div>
+      <h2 class="modal-title" id="modal-result-title">Player 1 Wins!</h2>
+      <p class="modal-subtitle" id="modal-result-sub">Sensational victory in 5 moves!</p>
+      
+      <div class="modal-stats-card glass-card">
+        <div class="stat-item">
+          <span class="stat-label">Mode</span>
+          <span class="stat-value" id="modal-stat-mode">Two Players</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Moves</span>
+          <span class="stat-value" id="modal-stat-moves">7</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Round Score</span>
+          <span class="stat-value" id="modal-stat-score">1 - 0</span>
+        </div>
+      </div>
+
+      <div class="modal-buttons-group">
+        <button id="modal-play-again-btn" class="primary-glow-btn">
+          <span>Play Again</span>
+        </button>
+        <button id="modal-main-menu-btn" class="glass-btn">
+          <span>Main Menu</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: MATCH HISTORY DRAWER / MODAL -->
+  <div class="modal-backdrop" id="history-modal" aria-hidden="true" role="dialog" aria-labelledby="history-modal-title">
+    <div class="modal-card glass-card history-card">
+      <div class="history-header">
+        <h2 class="modal-title" id="history-modal-title">Match History</h2>
+        <button id="close-history-btn" class="icon-btn glass-btn" aria-label="Close history modal">✕</button>
+      </div>
+      <p class="modal-subtitle">Recent 10 completed matches</p>
+
+      <div class="history-list" id="history-list">
+        <!-- Rendered dynamically by script.js -->
+        <div class="history-empty">No games recorded yet. Play a match to see history!</div>
+      </div>
+
+      <div class="history-footer">
+        <button id="clear-history-btn" class="glass-btn small-btn danger-btn">
+          <span>Clear History</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
